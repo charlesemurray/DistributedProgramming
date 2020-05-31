@@ -1,0 +1,11 @@
+Context
+Currently everything about an algorithm has to be completed within that algorithms processes. This makes it hard to reuse algorithms that I have already created that should do the same thing as part of the new algorithm. 
+Solution Design
+Create a Proxy Process that will be the one that is actually a part of the network and use it to connect to the other processes. This should make sure that any existing algorithms that have been created still work with the new Proxy process style.
+Problems
+1.
+We currently directly place new messages into channels that go to those processes and some of the algorithms rely on those in and out channels being the same to determine which processes have received which messages. We also need to take into account the problems if in later algorithms the processes are not just using the channels to keep track of what is done but are also passing those channels between processes to be used by the new processes.
+Solution
+Solving the first issue should not be two hard. We just have to make the channels equivalent if the sender and receiver are the same which since those will reference the proxy process instead of the backend processes that should be fine. For the second problem, I believe that instead of having a level of channels between the proxies and then another level of channels between the processes and the proxies we need to have the proxies just be a part of the channel itself. That way every process as part of a node is actually keeping track of the same sets of channels rather than using different channels per process. This will however require a multitude of queues per channel rather than just the one.
+2.
+We are currently using dispatch in order to control which method the Message gets sent to. This is great while ever we only have the one process however once we go to multiple processes unless the customer is required to actually stipulate which process they are sending to we have an issue. But since each of the Tokens is required to be its own class anyway. What we can do is have a proxy system that would allow us to choose the process by the Token that is getting sent. It would also allow the loopback to instead of just going directly back to the same process to actually go to the proxy and then be sent to the correct process.

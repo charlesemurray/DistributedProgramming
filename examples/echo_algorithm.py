@@ -27,6 +27,7 @@ class EchoProcess(Process):
 
     @dispatch(EchoToken)
     async def on_receive(self, msg):
+        print("EchoToken")
         channel = msg.carrier
         self.rec_p += 1
         if self.is_initiator:
@@ -39,6 +40,7 @@ class EchoProcess(Process):
             if self.rec_p == len(self.in_channels):
                 self.log.debug('Process: ' + self.id + ' : ' + msg.value)
                 await self.father.send(EchoToken(msg.value))
+        print("Finished Echo")
 
 
 class TerminatingEchoProcess(Process):
@@ -51,6 +53,8 @@ class TerminatingEchoProcess(Process):
 
     @main
     async def run(self):
+        if self.is_initiator:
+            self.log.debug(self.id + "is initiator.")
         self.log.debug(self.id + " started.")
         if self.is_initiator:
             await asyncio.wait([channel.send(EchoToken(self.id)) for channel in self.out_channels])
@@ -78,10 +82,8 @@ class TerminatingEchoProcess(Process):
 
 def test_echo():
     graph = nx.hypercube_graph(4)  # 4 dimensional
-    sm = Simulation(embedding_graph=graph, process_type=TerminatingEchoProcess, channel_type=DelayedChannel)
-    for a in sm.node_map:
-        a.is_initiator = True
-        break
+    sm = Simulation(embedding_graph=graph, process_types=[EchoProcess, TerminatingEchoProcess], channel_type=DelayedChannel)
+    list(sm.node_map.keys())[1].is_initiator = True
 
     sm.run(quit_after=4.0)
 
