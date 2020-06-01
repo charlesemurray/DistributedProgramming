@@ -15,6 +15,13 @@ class Message:
     def receiver(self):
         return self._channel.receiver
 
+class CallbackMessage(Message):
+    def __init__(self, function):
+        super(CallbackMessage, self).__init__(function=function)
+
+    
+
+
 if __name__ == "__main__":
     msg = Message(sender="A", receiver="B")
     assert msg.sender is "A"

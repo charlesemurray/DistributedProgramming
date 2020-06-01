@@ -17,7 +17,7 @@ class BackToken(Message):
 
 class SpanningTreeProcess(Process):
     def __init__(self, pid=None):
-        super(SpanningTreeProcess, self).__init__(pid=pid)
+        super(SpanningTreeProcess, self).__init__(pid = pid)
         self.parent = None
         self.parent_channel = None
         self.children = set()
@@ -68,7 +68,7 @@ class SpanningTreeProcess(Process):
 
 def test_spanning_tree():
     graph = nx.hypercube_graph(4)  # 4 dimensional
-    sm = Simulation(embedding_graph=graph, process_type=SpanningTreeProcess, channel_type=DelayedChannel)
+    sm = Simulation(embedding_graph=graph, process_types=[SpanningTreeProcess], channel_type=DelayedChannel)
     list(sm.node_map.keys())[0].is_initiator = True
     #for a in sm.node_map:
     #    a.is_initiator = True

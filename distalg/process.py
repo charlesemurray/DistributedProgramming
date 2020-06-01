@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import shortuuid
 from multipledispatch import dispatch
-from distalg.message import Message
+from distalg.message import Message, CallbackMessage
 from functools import partial
 
 import wrapt
@@ -59,6 +59,8 @@ class Process(object):
 
     async def process_messages(self):
         async for msg in self.receive_msgs():
+            print("ProcessMessages")
+            print(msg)
             await self.on_receive(msg)
             self.incoming_msgs.task_done()
 
@@ -67,8 +69,13 @@ class Process(object):
 
     @dispatch(Message)
     async def on_receive(self, msg):
-        #print("Wrong Message Function")
+        print("Wrong Message Function")
         pass
+
+    @dispatch(CallbackMessage)
+    async def on_receive(self, msg):
+        print("CallbackMessage")
+        #await msg.function(msg)
 
     @property
     def id(self):

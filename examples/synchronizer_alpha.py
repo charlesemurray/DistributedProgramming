@@ -1,4 +1,4 @@
-from distalg import Process, DelayedChannel, Message, Simulation, dispatch, main
+from distalg import Process, DelayedChannel, Message, CallbackMessage, Simulation, dispatch, main
 import networkx as nx
 import asyncio
 import logging
@@ -21,15 +21,6 @@ class PulseToken(Message):
     def __init__(self):
         super(PulseToken, self).__init__()
 
-class ExpectedAcksToken(Message):
-    def __init__(self):
-        super(ExpectedAcksToken, self).__init__()
-
-class NeighborsSafeToken(Message):
-    def __init__(self):
-        super(NeighborsSafeToken, self).__init__()
-
-
 class SynchronizerAlphaProcess(Process):
     def __init__(self, pid=None):
         super(SynchronizerAlphaProcess, self).__init__(pid=pid)
@@ -46,12 +37,13 @@ class SynchronizerAlphaProcess(Process):
     async def run(self):
         self.log.debug(self.id + " started.")
         print(self.neighbors)
+        print(self.loopback_channel)
         await self.loopback_channel.send(PulseToken())
         await self.process_messages()
 
     @dispatch(PulseToken)
     async def on_receive(self, msg):
-        #print("PulseToken")
+        print("PulseToken")
         channel = msg.carrier
         if self.rounds > 0:
             self.rounds -= 1
@@ -60,27 +52,26 @@ class SynchronizerAlphaProcess(Process):
                 await k.send(MsgToken(self.clock))
             self.expected_acks = len(self.out_channels)
             self.neighbors_safe = set()
-            await self.loopback_channel.send(ExpectedAcksToken())
+            await self.loopback_channel.send(CallbackMessage(function=self.check_expected_acks))
         else:
             self.log.debug("Finished")
 
-    @dispatch(ExpectedAcksToken)
-    async def on_receive(self, msg):
-        #print("ExpectedAcksToken")
+    async def check_expected_acks(self, msg):
+        print("ExpectedAcks")
         if self.expected_acks == 0:
             for channel in self.out_channels:
                 await channel.send(SafeToken())
-            await self.loopback_channel.send(NeighborsSafeToken())
+            await self.loopback_channel.send(self.check_neighbors_safe())
         else:
-            await self.loopback_channel.send(ExpectedAcksToken())
+            await self.loopback_channel.send(CallBackToken(function=self.check_expected_acks))
 
-    @dispatch(NeighborsSafeToken)
-    async def on_receive(self, msg):
-        #print("NeighborsSafeToken")
+    async def check_neighbors_safe(self, msg):
+        print("NeghborsSafe")
         if self.neighbors_safe == self.neighbors:
             await self.loopback_channel.send(PulseToken())
         else:
-            await self.loopback_channel.send(NeighborsSafeToken())
+            await self.loopback_channel.send(CallbackMessage(function=self.check_neighbors_safe))
+
 
 
 

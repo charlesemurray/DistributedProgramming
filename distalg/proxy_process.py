@@ -1,4 +1,4 @@
-from distalg import Process, ReliableChannel, DelayedChannel, Message, dispatch, main
+from distalg import Process, LoopbackChannel, DelayedChannel, Message, dispatch, main
 import networkx as nx
 import asyncio
 import logging
@@ -53,7 +53,7 @@ class ProxyProcess(Process):
             process.neighbors = self.neighbors
 
     def create_loopback_channel(self, in_end, out_end):
-        channel = ReliableChannel()
+        channel = LoopbackChannel()
         channel._in_end = in_end
         channel._out_end = out_end
         channel._sender = self.id
@@ -64,7 +64,7 @@ class ProxyProcess(Process):
     async def on_receive(self, msg):
         process = self.token_types[(type(msg),)]
         channel = self.process_routing[type(process)]
-        await channel.send(msg)
+        await channel.forward(msg)
 
     async def run(self):
         for process in self.processes:

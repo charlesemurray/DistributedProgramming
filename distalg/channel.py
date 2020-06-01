@@ -1,6 +1,6 @@
 import asyncio
 import random
-from distalg.message import Message
+from distalg.message import Message, CallbackMessage
 from multipledispatch import dispatch
 import sys
 
@@ -29,7 +29,7 @@ class ReliableChannel:
             return await self.outer.started.get()
 
     def obtain_msgs(self):
-        return ReliableChannel.PoppedMsgsAsyncIterable(self)
+        return self.PoppedMsgsAsyncIterable(self)
 
     @property
     def in_end(self):
@@ -55,7 +55,7 @@ class ReliableChannel:
         async for msg in self.obtain_msgs():
             if isinstance(msg, ReliableChannel.TerminateToken):
                 return
-            await self.__deliver(msg)
+            await self._deliver(msg)
 
     async def send(self, message):
         message._channel = self
@@ -63,17 +63,33 @@ class ReliableChannel:
         #print(self.started)
         await self.started.put(message)
 
+    async def forward(self, message):
+        await self.started.put(message)
+
     async def close(self):
         await self.started.put(ReliableChannel.TerminateToken())
 
-    async def __deliver(self, message):
+    async def _deliver(self, message):
         """
         :param message: The Message object to be delivered
         :return:
         """
-        #print(message)
+        print(message)
         await self._out_end.incoming_msgs.put(message)
         #print(self._out_end.incoming_msgs)
+
+class LoopbackChannel(ReliableChannel):
+    def __init__(self):
+        super().__init__()
+
+    async def _deliver(self, message):
+        #print("__deliver")
+        #print(type(message))
+        if type(message) == CallbackMessage:
+            #print("Add CallbackMessage")
+            await self._in_end.incoming_msgs.put(message)
+        else:
+            await self._out_end.incoming_msgs.put(message)
 
 class UnreliableDelayedChannel(ReliableChannel):
 
@@ -101,7 +117,7 @@ class UnreliableDelayedChannel(ReliableChannel):
         self.reliability = reliability
 
 
-    async def __deliver(self, message):
+    async def _deliver(self, message):
         """
         :param message: The Message object to be delivered
         :return:
@@ -148,7 +164,7 @@ class UnreliableDelayedFIFOChannel(UnreliableDelayedChannel):
     def __init__(self, *args, **kwargs):
         super(UnreliableDelayedFIFOChannel, self).__init__(*args, **kwargs)
 
-    def __deliver(self, message):
+    def _deliver(self, message):
         raise NotImplementedError
 
 Channel = ReliableChannel
