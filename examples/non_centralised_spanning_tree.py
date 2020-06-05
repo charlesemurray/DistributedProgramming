@@ -74,7 +74,7 @@ class NonCentralisedSpanningTreeProcess(Process):
 
 def test_non_centralised_spanning_tree():
     graph = nx.hypercube_graph(4)  # 4 dimensional
-    sm = Simulation(embedding_graph=graph, process_type=NonCentralisedSpanningTreeProcess, channel_type=DelayedChannel)
+    sm = Simulation(embedding_graph=graph, process_types=[NonCentralisedSpanningTreeProcess], channel_type=DelayedChannel)
     print(sm.node_map.keys())
     list(sm.node_map.keys())[0].is_initiator = True
     #for a in sm.node_map:

@@ -23,7 +23,7 @@ class PulseToken(Message):
 
 class SynchronizerAlphaProcess(Process):
     def __init__(self, pid=None):
-        super(SynchronizerAlphaProcess, self).__init__(pid=pid)
+        super().__init__(pid=pid)
         self.clock = 0
         self.rounds = 5
         self.expected_ack = 0
@@ -43,7 +43,6 @@ class SynchronizerAlphaProcess(Process):
 
     @dispatch(PulseToken)
     async def on_receive(self, msg):
-        print("PulseToken")
         channel = msg.carrier
         if self.rounds > 0:
             self.rounds -= 1
@@ -57,16 +56,14 @@ class SynchronizerAlphaProcess(Process):
             self.log.debug("Finished")
 
     async def check_expected_acks(self, msg):
-        print("ExpectedAcks")
         if self.expected_acks == 0:
             for channel in self.out_channels:
                 await channel.send(SafeToken())
-            await self.loopback_channel.send(self.check_neighbors_safe())
+            await self.loopback_channel.send(CallbackMessage(function=self.check_neighbors_safe))
         else:
-            await self.loopback_channel.send(CallBackToken(function=self.check_expected_acks))
+            await self.loopback_channel.send(CallbackMessage(function=self.check_expected_acks))
 
     async def check_neighbors_safe(self, msg):
-        print("NeghborsSafe")
         if self.neighbors_safe == self.neighbors:
             await self.loopback_channel.send(PulseToken())
         else:
@@ -77,7 +74,6 @@ class SynchronizerAlphaProcess(Process):
 
     @dispatch(MsgToken)
     async def on_receive(self, msg):
-        #print("MsgToken")
         channel = msg.carrier
         await channel.back.send(AckToken())
         if not channel.sender in self.neighbors_safe:
@@ -88,21 +84,12 @@ class SynchronizerAlphaProcess(Process):
 
     @dispatch(AckToken)
     async def on_receive(self, msg):
-        #print("AckToken")
         channel = msg.carrier
         self.expected_acks -= 1
 
     @dispatch(SafeToken)
     async def on_receive(self, msg):
-        #print("SafeToken")
         channel = msg.carrier
-        print("Neighbors")
-        print(self.neighbors)
-        print("Out Channels")
-        print([channel.receiver for channel in self.out_channels])
-        print(self.id)
-        print("Safe Neighbors")
-        print(self.neighbors_safe)
         self.neighbors_safe.add(channel.sender)
 
 

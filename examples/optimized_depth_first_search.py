@@ -65,7 +65,7 @@ class OptimizedDepthFirstTraversalProcess(Process):
 
 def test_optimized_depth_first_traversal():
     graph = nx.hypercube_graph(4)  # 4 dimensional
-    sm = Simulation(embedding_graph=graph, process_type=OptimizedDepthFirstTraversalProcess, channel_type=DelayedChannel)
+    sm = Simulation(embedding_graph=graph, process_types=[OptimizedDepthFirstTraversalProcess], channel_type=DelayedChannel)
     list(sm.node_map.keys())[1].is_initiator = True
 
     sm.run(quit_after=5.0)

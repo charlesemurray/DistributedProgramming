@@ -76,7 +76,7 @@ class BasicDepthFirstTraversalProcess(Process):
 
 def test_basic_depth_first_traversal():
     graph = nx.hypercube_graph(4)  # 4 dimensional
-    sm = Simulation(embedding_graph=graph, process_type=BasicDepthFirstTraversalProcess, channel_type=DelayedChannel)
+    sm = Simulation(embedding_graph=graph, process_types=[BasicDepthFirstTraversalProcess], channel_type=DelayedChannel)
     list(sm.node_map.keys())[1].is_initiator = True
 
     sm.run(quit_after=12.0)

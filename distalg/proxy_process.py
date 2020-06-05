@@ -2,21 +2,14 @@ from distalg import Process, LoopbackChannel, DelayedChannel, Message, dispatch,
 import networkx as nx
 import asyncio
 import logging
+import types
 from enum import Enum
 
 logging.basicConfig(level=logging.DEBUG)
 
-class GoToken(Message):
-    def __init__(self):
-        super(GoToken, self).__init__()
-
-class BackToken(Message):
-    def __init__(self, response):
-        super(BackToken, self).__init__(response=response)
-
-class BackOption(Enum):
-    YES = 1
-    NO = 2
+def add_callback(self, instance):
+    for key, value in super(self.__class__, self).on_receive.funcs.items():
+        self.on_receive.add(key, value)
 
 class ProxyProcess(Process):
 
@@ -41,6 +34,8 @@ class ProxyProcess(Process):
             process = process_type(self.id)
             self.processes.append(process)
             self.token_types.update(process.get_token_types())
+            process.add_callback = types.MethodType(add_callback, process)
+            process.add_callback(process)
             channel = self.create_loopback_channel(process, self)
             rev_channel = self.create_loopback_channel(self, process)
             channel._back = rev_channel
@@ -51,6 +46,7 @@ class ProxyProcess(Process):
             process.out_channels = self.out_channels
             process.in_channels = self.in_channels
             process.neighbors = self.neighbors
+
 
     def create_loopback_channel(self, in_end, out_end):
         channel = LoopbackChannel()

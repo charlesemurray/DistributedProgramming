@@ -59,8 +59,6 @@ class Process(object):
 
     async def process_messages(self):
         async for msg in self.receive_msgs():
-            print("ProcessMessages")
-            print(msg)
             await self.on_receive(msg)
             self.incoming_msgs.task_done()
 
@@ -74,8 +72,7 @@ class Process(object):
 
     @dispatch(CallbackMessage)
     async def on_receive(self, msg):
-        print("CallbackMessage")
-        #await msg.function(msg)
+        await msg.function(msg)
 
     @property
     def id(self):
